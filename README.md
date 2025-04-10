@@ -1,94 +1,110 @@
 <p align="center">
-<img src="https://i.imgur.com/pU5A58S.png" alt="Microsoft Active Directory Logo"/>
+  <img src="https://i.imgur.com/pU5A58S.png" alt="Microsoft Active Directory Logo"/>
 </p>
 
-<h1>On-premises Active Directory Deployed in the Cloud (Azure)</h1>
-This tutorial outlines the implementation of on-premises Active Directory within Azure Virtual Machines.<br />
+<h1 align="center">On-Premises Active Directory Deployed in the Cloud (Azure)</h1>
 
+<p align="center">
+  This tutorial outlines the deployment and configuration of an on-premises style Active Directory setup using Azure Virtual Machines.
+</p>
 
-<h2>Environments and Technologies Used</h2>
+---
 
-- Microsoft Azure (Virtual Machines/Compute)
-- Remote Desktop
-- Active Directory Domain Services
-- PowerShell
+## 🧰 Environments and Technologies Used
 
-<h2>🖥️ Operating Systems Used </h2>
+- **Microsoft Azure** – Virtual Machines and Virtual Networking  
+- **Remote Desktop Protocol (RDP)** – VM access  
+- **Active Directory Domain Services** – Domain and user management  
+- **PowerShell** – Scripting and automation
 
-- Windows Server 2022
-- Windows 10 (21H2)
+## 💻 Operating Systems Used
 
-<h2>High-Level Deployment and Configuration Steps</h2>
+- **Windows Server 2022** (for Domain Controller)
+- **Windows 10 (21H2)** (for Client Machine)
 
-- Set up Azure Virtual Machines
-- Configure Acitve Directory Domain Services
-- Promote Server to Domain Controller
-- Connect and Manage Domain-Joined Client(s)
+---
 
-<h2>Deployment and Configuration Steps</h2>
+## 🔄 High-Level Deployment Steps
 
-Step 1: Set Up Azure VM's
--Create two VM's (Domain Controller and Client) in Azure
--Configure network settings and security groups
+- Deploy two Azure VMs (Domain Controller and Client)
+- Configure Virtual Network and DNS
+- Install and configure Active Directory Domain Services
+- Promote server to Domain Controller
+- Connect client to the domain
+- Create organizational units, users, and groups
 
+---
 
-![Screenshot 2025-03-24 122816](https://github.com/user-attachments/assets/09dbeab3-4113-411e-a8b2-a6d33f0a07fb)
+## 🚀 Detailed Deployment and Configuration Steps
 
-DC-1 (Domain Controller): Running Windows Server 2022
-Client-1: Running Windows 10
-Ensure both Virtual Machines are in the same Virtual Network
+### Step 1: Create Azure VMs
 
-![Screenshot 2025-03-24 122316](https://github.com/user-attachments/assets/364fe9d0-1467-4902-a8bd-830ab5bf98cc)
+- Deploy two virtual machines:  
+  - `DC-1` (Windows Server 2022) – Domain Controller  
+  - `Client-1` (Windows 10) – Domain-joined client
+- Ensure both VMs are in the **same Virtual Network**.
 
+![VM Setup](https://github.com/user-attachments/assets/09dbeab3-4113-411e-a8b2-a6d33f0a07fb)
 
-After creating the virtual machines , set Client-1's DNS settings to DC-1 Private IP address via the NIC. In order to change the DNS server for client-1 we need to go to our virtual machines and click on client-1. From here we: click on Network settings -> DNS servers (under settings option) -> custom -> enter private address of DC-1 (for this example). This will reroute traffic to DC-1 instead of the default gateway given by azure. 
+- Check that the `DC-1` and `Client-1` IPs are static/private within the subnet.
 
-![Screenshot 2025-03-24 122905](https://github.com/user-attachments/assets/d6d26e15-994e-4dda-b7d3-78f752ced38c)
+![VM Network](https://github.com/user-attachments/assets/364fe9d0-1467-4902-a8bd-830ab5bf98cc)
 
+---
 
-To confirm this we can log into client-1 and execute the command [ipconfig /all] and [ping 10.0.0.4] on powershell (in this example we have set Mainframe to 10.0.0.4) in order to confirm the DNS configuration and connection.
+### Step 2: Update DNS for Client-1
 
-![Screenshot 2025-03-25 142958](https://github.com/user-attachments/assets/2fe0020e-5952-4722-b58d-edc5758016d1)
+Set `Client-1`'s DNS server to point to `DC-1`'s **private IP address**:
 
- to make DC-1 into a domain controller, we need to go to server manager and click on add roles and services. From here we can click next until we reach the page (server roles) and select "Active Directory Domain Services". We can then click next until given to the option to install.
+- Go to **Azure portal > Client-1 > Networking > DNS Servers**  
+- Select **Custom** and enter `DC-1`'s IP (e.g., `10.0.0.4`)
 
-![Screenshot 2025-03-24 131224](https://github.com/user-attachments/assets/553dc966-d216-4d6b-a96d-c53005add241)
+![DNS Config](https://github.com/user-attachments/assets/d6d26e15-994e-4dda-b7d3-78f752ced38c)
 
-![Screenshot 2025-03-24 131300](https://github.com/user-attachments/assets/7ef4998c-0d6d-44f3-bcd9-39c2faaa99fb)
+Verify settings from within `Client-1`:
 
-![Screenshot 2025-03-24 131506](https://github.com/user-attachments/assets/9b7f57b6-ad5c-42d7-baaa-0af074a1abe2)
+### Step 3: Promote DC-1 to a Domain Controller
 
-We now want to create a two folders, one for employees and another for admins, and create a domian admin as well. For the folders we can click the search bar and enter Active Directory Users and Computers and click on it -> right click on "mydomain.com" -> click new -> Organizational Unit -> enter file names ( in this case we create two, one for _EMPLOYEES and _ADMINS). 
+- Log into DC-1 and open Server Manager
 
-![Screenshot 2025-03-24 132749](https://github.com/user-attachments/assets/da64616a-bb8e-4067-9daf-446eeee903e6)
+- Select Add Roles and Features > Active Directory Domain Services
 
-![Screenshot 2025-03-24 132855](https://github.com/user-attachments/assets/237dd006-0800-429f-9f68-bf99fbfa3e0c)
-
-![Screenshot 2025-03-24 132938](https://github.com/user-attachments/assets/89275399-ecf1-4c5b-8cee-354e8cc3a5b0)
-
-Now in order to create a domain admin we can right click the _ADMINS folder -> New -> User. Fill out the information, in this case I created a domian admin named "Jane_admin", you will be clicked next then prompted for a password. Once completed, in order to make this user a domain admin we need to right click on the user ( in this case Jane Doe) -> properties -> Member of -> add -> enter "Domain Admins" -> check names -> ok -> apply then ok. This will add Jane doe as part of the Domain Admins group officially.
-
-![Screenshot 2025-03-24 134842](https://github.com/user-attachments/assets/b34e8699-2167-4fd0-b3fe-286a35ad9afb)
-![Screenshot 2025-03-24 133213](https://github.com/user-attachments/assets/2fa0bc8b-969d-4b6f-bf17-37b8a67ae9e1)
-
-
-
-
-Next we need to add Client-1 to our domain. Go into settings -> Rename this PC (advanced) -> change -> click on Domain, enter domain ( in this case: mydomain.com) -> ok. This will add Client-1 to the mydomain.com but to make sure we will go back to the Domain controller. From here we can search for Active Directory Users and Computers -> click on Computers folder -> Client-1 should be present.
-
-![Screenshot 2025-03-24 134259](https://github.com/user-attachments/assets/05805937-a262-4e13-8689-3453813a7469)
-![Screenshot 2025-03-24 134913](https://github.com/user-attachments/assets/1bfdd722-3e30-4f83-bb6f-1d06a05784e2)
-
-To Create users I used this script shown in the example. DC-1 as admin -> open Powershell ISE -> File -> New -> paste script into command line -> run script. If executed correctly the command line should generate users but to confirm we can head over to Active Directory Users and Computers -> _EMPLOYEES foler. There should be users in the folder _EMPLOYEES that is why it is important it is spelled correctly.
+- Complete the wizard and Install
 
 
 
-![Screenshot 2025-03-24 140617](https://github.com/user-attachments/assets/0d833920-9e32-4477-b71f-c724ab026276)
+### Step 4: Create Organizational Units and Domain Admin
+
+- Open Active Directory Users and Computers
+
+- Create OUs: _EMPLOYEES and _ADMINS
+- Create a domain admin:
+- Right-click _ADMINS > New > User
+- Assign to "Domain Admins" group via Properties > Member of
+
+
+### Step 5: Join Client-1 to Domain
+
+- On Client-1: Settings > System > About > Rename this PC (advanced)
+- Select Domain, enter your domain (e.g., mydomain.com)
+- Check success from DC-1:
+- Open Active Directory Users and Computers
+- Navigate to Computers OU and confirm Client-1 is listed
+
+
+### Step 6: Create Multiple Users via PowerShell
+- Log in to DC-1, open PowerShell ISE as Admin
+- Create script file: File > New, paste user creation script
+- Run the script to auto-generate users under _EMPLOYEES
+
+⚠️ Make sure the OU name in the script matches the one created
+
+
+### 🧪 Final Notes
+- A cloud-hosted domain controller can fully replicate on-prem environments
+- AD setup in Azure is ideal for testing, training, and hybrid deployments
+- Always configure proper DNS and security group rules for reliable domain comms
 
 
 
 
-
-
-
- 
